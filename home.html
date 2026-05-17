@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیدہ ہیرا</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; direction: rtl; }
+        .container { background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); padding: 30px; border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.3); text-align: center; width: 90%; max-width: 400px; color: #fff; }
+        h1 { font-size: 2.5rem; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        p { font-size: 1.2rem; margin-bottom: 30px; line-height: 1.6; }
+        .btn { background: #fff; color: #7f52ff; border: none; padding: 15px 40px; font-size: 1.2rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.2s; -webkit-user-select: none; user-select: none; }
+        .btn:active { transform: scale(0.95); }
+        .chat-box { display: none; background: #fff; border-radius: 15px; padding: 15px; color: #333; text-align: right; }
+        .messages { height: 200px; overflow-y: auto; margin-bottom: 15px; border-bottom: 1px solid #eee; padding: 5px; }
+        .input-area { display: flex; gap: 8px; align-items: center; }
+        .input-area input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 25px; outline: none; }
+        .input-area button { background: #7f52ff; color: #fff; border: none; padding: 10px 15px; border-radius: 25px; cursor: pointer; font-weight: bold; }
+        .mic-btn { background: #ff4a5a !important; font-size: 1.2rem; padding: 10px 12px !important; border: none; border-radius: 25px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 45px; height: 45px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .mic-active { animation: pulse 1.2s infinite; background: #28a745 !important; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="welcome-screen">
+        <h1>سیدہ ہیرا</h1>
+        <p>مائی وائی فائی نیٹ ورک میں خوش آمدید</p>
+        <button class="btn" onclick="startChat(event)">✨ خوش آمدید!</button>
+    </div>
+
+    <div id="chat-screen" class="chat-box">
+        <div class="messages" id="chat-messages">
+            <div><strong>ہیرا:</strong> سید فرخ، میں یہاں ہوں۔ آپ کیسے ہیں؟</div>
+        </div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="اپنا پیغام لکھیں یا بولیں...">
+            <button id="mic-button" class="mic-btn" onclick="toggleVoice()">🎙️</button>
+            <button onclick="sendMessage()">بھیجیں</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let recognition;
+    let isListening = false;
+
+    function initVoice() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'ur-PK'; 
+            recognition.interimResults = false;
+
+            recognition.onstart = function() {
+                isListening = true;
+                document.getElementById('mic-button').classList.add('mic-active');
+                document.getElementById('user-input').placeholder = "میں سن رہی ہوں، بولیں...";
+            };
+
+            recognition.onresult = function(event) {
+                const resultText = event.results[0][0].transcript;
+                document.getElementById('user-input').value = resultText;
+            };
+
+            recognition.onerror = function(event) {
+                console.error("Voice error: ", event.error);
+                if(event.error === 'not-allowed') {
+                    alert("براہ کرم براؤزر کی سیٹنگز میں جا کر مائیک کی اجازت (Allow) کریں۔");
+                }
+                stopListening();
+            };
+
+            recognition.onend = function() {
+                stopListening();
+            };
+        } else {
+            alert("آپ کا براؤزر وائس موڈ سپورٹ نہیں کرتا۔ کروم استعمال کریں۔");
+        }
+    }
+
+    function toggleVoice() {
+        if (!recognition) {
+            initVoice();
+        }
+        
+        if (!recognition) return;
+
+        if (isListening) {
+            recognition.stop();
+        } else {
+            try {
+                recognition.start();
+            } catch(e) {
+                console.log(e);
+            }
+        }
+    }
+
+    function stopListening() {
+        isListening = false;
+        document.getElementById('mic-button').classList.remove('mic-active');
+        document.getElementById('user-input').placeholder = "اپنا پیغام لکھیں یا بولیں...";
+    }
+
+    function startChat(event) {
+        event.preventDefault(); 
+        document.getElementById('welcome-screen').style.display = 'none';
+        document.getElementById('chat-screen').style.display = 'block';
+        initVoice(); 
+    }
+
+    function sendMessage() {
+        let input = document.getElementById('user-input');
+        let msg = input.value.trim();
+        if(msg === '') return;
+
+        let messagesDiv = document.getElementById('chat-messages');
+        messagesDiv.innerHTML += `<div><strong>آپ:</strong> ${msg}</div>`;
+        input.value = '';
+
+        fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: msg})
+        })
+        .then(res => res.json())
+        .then(data => {
+            messagesDiv.innerHTML += `<div><strong>ہیرا:</strong> ${data.reply}</div>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+    }
+</script>
+
+</body>
+</html>
